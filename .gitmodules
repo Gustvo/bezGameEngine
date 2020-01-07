@@ -1,0 +1,3 @@
+[submodule "bezGameEngine/vendor/imgui"]
+	path = bezGameEngine/vendor/imgui
+	url = https://github.com/Gustvo/imgui.git
