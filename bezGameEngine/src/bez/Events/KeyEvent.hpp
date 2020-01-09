@@ -74,6 +74,23 @@ private:
   };
 };
 
+class TextInputEvent : public KeyEvent {
+public:
+  TextInputEvent(Keycode keycode) : KeyEvent(keycode){};
+
+  static EventType getStaticType() { return EventType::TEXTINPUT; };
+  EventType getEventType() const override { return getStaticType(); };
+
+  std::string toString() const override {
+    std::stringstream ss;
+    ss << "TextInput: " << m_keycode;
+    return ss.str();
+  }
+
+protected:
+  inline void registerKey(Keycode) const override{};
+};
+
 } // namespace bez
 
 #endif // KEYEVENT_HPP
