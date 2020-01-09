@@ -11,47 +11,57 @@ namespace bez {
 
 class Input {
 public:
-  Input() = default;
+  Input();
+  ~Input();
 
-  static bool isKeyPressed(Keycode key) { return m_input->m_keyStates[key]; };
-  static bool isKeyRepeated(Keycode key) {
-    return m_input->m_keyStates[key] == m_input->m_prevKeyStates[key] &&
-           m_input->m_keyStates[key] == true;
-  };
-  static bool isMousePressed(MouseButton button) {
-    return m_mouseButtonStates[button];
-  };
+  /// Returns if the key is being pressed
+  static bool isKeyPressed(Keycode key);
 
-  static void registerKey(Keycode key, bool keyState) {
-    std::copy(m_keyStates, m_keyStates + BEZ_NUM_KEYCODES,
-              m_input->m_prevKeyStates);
-    m_input->m_keyStates[key] = keyState;
-  };
+  /// Returns if the key is being pressed for multiple frames
+  static bool isKeyRepeated(Keycode key);
 
-  static void registerMousePosition(std::pair<float, float> mousePosition) {
-    m_mouseCoordinates = mousePosition;
-  };
+  /// Returns if mouse button is being pressed
+  static bool isMousePressed(MouseButton button);
 
-  static std::pair<float, float> getMousePosition() {
-    return m_mouseCoordinates;
-  };
+  static std::pair<float, float> getMousePosition();
 
-  static void registerMouseButton(MouseButton button, bool state) {
-    m_mouseButtonStates[button] = state;
-  };
+  //static bool *getAllKeys();
 
 protected:
   // virtual bool isKeyPressedImpl(Keycode key) = 0;
 
 private:
-  inline static std::unique_ptr<Input> m_input = std::make_unique<Input>();
-  inline static bool m_keyStates[BEZ_NUM_KEYCODES] = {};
-  inline static bool m_prevKeyStates[BEZ_NUM_KEYCODES] = {};
 
-  inline static bool m_mouseButtonStates[BEZ_NUM_MOUSEBUTTONS] = {};
+  static Input *m_input;
 
-  inline static std::pair<float, float> m_mouseCoordinates =
-      std::make_pair(0.f, 0.f);
+  /**
+   * \brief Registers key press in the input buffer
+   *
+   * To be called on creation of classes that inherit from KeyEvent
+   */
+  static void registerKey(Keycode key, bool keyState);
+
+  /**
+   * \brief Registers mouse button press in the input buffer
+   *
+   * To be called on MouseButtonPressedEvent and MouseButtonPressedEvent
+   * creation
+   */
+  static void registerMouseButton(MouseButton button, bool state);
+
+  /**
+   * \brief Registers mouse position in the input buffer
+   *
+   * To be called on MouseMotionEvent creation
+   */
+  static void registerMousePosition(std::pair<float, float> mousePosition);
+
+  bool m_keyStates[BEZ_NUM_KEYCODES];
+  bool m_prevKeyStates[BEZ_NUM_KEYCODES];
+
+  bool m_mouseButtonStates[BEZ_NUM_MOUSEBUTTONS];
+
+  std::pair<float, float> m_mouseCoordinates;
 
   friend class KeyPressedEvent;
   friend class KeyReleasedEvent;
@@ -60,8 +70,6 @@ private:
   friend class MouseButtonReleasedEvent;
 };
 
-// std::unique_ptr<Input> Input::m_input = std::make_unique<Input>();
-// bool Input::m_keyStates[BEZ_NUM_KEYCODES] = {0};
 
 } // namespace bez
 
