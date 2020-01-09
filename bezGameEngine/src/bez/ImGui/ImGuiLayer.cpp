@@ -3,14 +3,18 @@
 #include <Platform/OpenGL/imgui_impl_opengl3.hpp>
 #include <SDL2/SDL.h>
 #include <bez/Application.hpp>
+#include <bez/Events/KeyEvent.hpp>
+#include <bez/Events/WindowEvent.hpp>
 #include <bez/ImGui/ImGuiLayer.hpp>
 #include <bez/Keycodes.hpp>
 #include <imgui.h>
 
 namespace bez {
 
-ImGuiLayer::ImGuiLayer()
-    : Layer("ImGuiLayer"), m_time(0.0f) {}
+ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer"), m_time(0.0f) {
+  for (auto &it : m_mouseBuffer)
+    it = false;
+}
 
 void ImGuiLayer::onAttach() {
   ImGui::CreateContext();
@@ -49,6 +53,9 @@ void ImGuiLayer::onAttach() {
 
   ImGui_ImplOpenGL3_Init("#version 410 core");
 
+  Application &app = Application::getApplication();
+  io.DisplaySize = ImVec2((float)app.getWindow().getWindowSize().x,
+                          (float)app.getWindow().getWindowSize().y);
 }
 
 void ImGuiLayer::onDetach() {}
@@ -56,25 +63,124 @@ void ImGuiLayer::onDetach() {}
 void ImGuiLayer::onUpdate() {
   ImGuiIO &io = ImGui::GetIO();
 
-  Application &app = Application::getApplication();
-  io.DisplaySize = ImVec2((float)app.getWindow().getWindowSize().x, (float)app.getWindow().getWindowSize().y);
+  double time = SDL_GetTicks() / 1000;
 
-  double time = SDL_GetTicks()/1000;
-
-  io.DeltaTime = m_time > 0.0f ? (time - m_time == 0? (1.f/60.f) : time - m_time) : (1.f / 60.f);
+  io.DeltaTime = m_time > 0.0f
+                     ? (time - m_time == 0 ? (1.f / 60.f) : time - m_time)
+                     : (1.f / 60.f);
   m_time = time;
+
+  io.MouseDown[0] = m_mouseBuffer[0] || Input::isMousePressed(BEZ_BUTTON_LEFT);
+  io.MouseDown[1] = m_mouseBuffer[1] || Input::isMousePressed(BEZ_BUTTON_RIGHT);
+  io.MouseDown[2] =
+      m_mouseBuffer[2] || Input::isMousePressed(BEZ_BUTTON_MIDDLE);
+
+  for (auto &button : m_mouseBuffer)
+    button = false;
 
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
-
-  static bool show = true;
-
-  ImGui::ShowDemoWindow(&show);
+    if (m_visible)
+      ImGui::ShowDemoWindow(&m_visible);
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ImGuiLayer::onEvent(Event &p_event) {}
+void ImGuiLayer::onEvent(Event &p_event) {
+  ImGuiIO &io = ImGui::GetIO();
+
+  EventDispatcher dispatcher(p_event);
+
+  dispatcher.dispatch<KeyPressedEvent>(
+      std::bind(&ImGuiLayer::handleKeyInput, this, std::placeholders::_1));
+
+  dispatcher.dispatch<KeyReleasedEvent>(
+      std::bind(&ImGuiLayer::handleKeyInput, this, std::placeholders::_1));
+
+  dispatcher.dispatch<MouseButtonPressedEvent>(
+      std::bind(&ImGuiLayer::handleMouseInput, this, std::placeholders::_1));
+
+  dispatcher.dispatch<MouseButtonReleasedEvent>(
+      std::bind(&ImGuiLayer::handleMouseInput, this, std::placeholders::_1));
+
+  dispatcher.dispatch<MouseMotionEvent>(
+      std::bind(&ImGuiLayer::handleMouseMotion, this, std::placeholders::_1));
+
+  dispatcher.dispatch<MouseWheelEvent>(std::bind(
+      [&io](MouseWheelEvent &p_event) {
+        if (p_event.getDirection().first > 0)
+          io.MouseWheelH += 1;
+        if (p_event.getDirection().first < 0)
+          io.MouseWheelH -= 1;
+        if (p_event.getDirection().second > 0)
+          io.MouseWheel += 1;
+        if (p_event.getDirection().second < 0)
+          io.MouseWheel -= 1;
+        return false;
+      },
+      std::placeholders::_1));
+
+  dispatcher.dispatch<TextInputEvent>(std::bind(
+      [&io](TextInputEvent &p_event) {
+        int keycode = p_event.getKeyCode();
+        io.AddInputCharacter(keycode);
+        return io.WantTextInput;
+      },
+      std::placeholders::_1));
+
+  dispatcher.dispatch<WindowResizedEvent>(std::bind(
+      [&io](WindowResizedEvent &p_event) {
+        Application &app = Application::getApplication();
+        io.DisplaySize = ImVec2((float)app.getWindow().getWindowSize().x,
+                                (float)app.getWindow().getWindowSize().y);
+
+        return false;
+      },
+      std::placeholders::_1));
+}
+
+bool ImGuiLayer::handleKeyInput(KeyEvent &p_event) {
+
+  ImGuiIO &io = ImGui::GetIO();
+
+  int key = p_event.getKeyCode();
+
+  if (Input::isKeyPressed(BEZ_KEYCODE_ESCAPE))
+    m_visible = !m_visible;
+
+  io.KeysDown[key] = Input::isKeyPressed(static_cast<Keycode>(key));
+  io.KeyShift = Input::isKeyPressed(BEZ_KEYCODE_LSHIFT) ||
+                Input::isKeyPressed(BEZ_KEYCODE_RSHIFT);
+
+  io.KeyCtrl = Input::isKeyPressed(BEZ_KEYCODE_LCTRL) ||
+               Input::isKeyPressed(BEZ_KEYCODE_RCTRL);
+
+  io.KeyAlt = Input::isKeyPressed(BEZ_KEYCODE_LALT);
+
+  io.KeySuper = Input::isKeyPressed(BEZ_KEYCODE_LSUPER);
+
+  return io.WantCaptureKeyboard;;
+}
+
+bool ImGuiLayer::handleMouseInput(MouseButtonEvent &p_event) {
+
+  if (p_event.getMouseButton() == BEZ_BUTTON_LEFT)
+    m_mouseBuffer[0] = true;
+  if (p_event.getMouseButton() == BEZ_BUTTON_RIGHT)
+    m_mouseBuffer[1] = true;
+  if (p_event.getMouseButton() == BEZ_BUTTON_MIDDLE)
+    m_mouseBuffer[2] = true;
+  return ImGui::GetIO().WantCaptureMouse;
+}
+
+bool ImGuiLayer::handleMouseMotion(MouseMotionEvent &p_event) {
+  ImGuiIO &io = ImGui::GetIO();
+
+  auto [mousex, mousey] = Input::getMousePosition();
+  io.MousePos = ImVec2(mousex, mousey);
+
+  return false;
+}
 
 } // namespace bez
