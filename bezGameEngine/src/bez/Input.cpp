@@ -1,10 +1,17 @@
 #include <bez/Input.hpp>
 
+#include <bez/Logger/Log.hpp>
+
 namespace bez {
 
 Input *Input::m_input = nullptr;
 
 Input::Input() {
+
+  if (m_input != nullptr)
+    delete m_input;
+    
+  BEZ_CORE_WARN("CREATING INPUT INTERFACE");
   m_input = this;
   for (int i = 0; i < BEZ_NUM_KEYCODES; ++i) {
     m_keyStates[i] = false;
@@ -18,6 +25,7 @@ Input::Input() {
 }
 
 Input::~Input() {
+  BEZ_CORE_WARN("DELETING INPUT INTERFACE");
   m_input = nullptr;
 }
 

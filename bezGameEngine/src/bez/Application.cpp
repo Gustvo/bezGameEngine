@@ -9,14 +9,18 @@
 
 namespace bez {
 
-Application *Application::m_instance = nullptr;
+Application *Application::s_instance = nullptr;
 
 Application::Application() {
+  m_input = new Input;
   m_isRunning = false;
-  m_instance = this;
+  s_instance = this;
 }
 
-Application::~Application() { m_window.reset(); }
+Application::~Application() {
+  m_window.reset();
+  delete m_input;
+}
 
 /// Loads necessary resouces, creating and configurating the window
 void Application::init(const char *p_title, unsigned int p_width,
@@ -114,8 +118,10 @@ void Application::popOverlay(Layer *p_layer) {
   m_layerStack.popOverlay(p_layer);
 }
 
+void Application::stop() { m_isRunning = false; }
+
 Window &Application::getWindow() { return *m_window; }
 
-Application &Application::getApplication() { return *m_instance; }
+Application &Application::getApplication() { return *s_instance; }
 
 } // namespace bez

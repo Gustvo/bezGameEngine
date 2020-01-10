@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+#include <bez/Input.hpp>
 #include <bez/LayerStack.hpp>
 #include <bez/Logger/Log.hpp>
 #include <bez/Window.hpp>
@@ -17,7 +18,7 @@ public:
   virtual void init(const char *Title = "Bez Game Engine",
                     unsigned int Width = 600, unsigned int Heigth = 600);
   void run();
-  inline void stop() { m_isRunning = false; };
+  void stop();
 
   bool isRunning();
 
@@ -33,15 +34,14 @@ public:
 
   static Application &getApplication();
 
-  // std::unique_ptr<Input> input = std::make_unique<Input>();
-
 protected:
 private:
   std::unique_ptr<Window> m_window;
+  Input *m_input;
   bool m_isRunning;
   LayerStack m_layerStack;
 
-  static Application *m_instance;
+  static Application *s_instance;
 };
 
 // To be defined by the client
