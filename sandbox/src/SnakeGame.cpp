@@ -12,8 +12,8 @@ public:
         Application::init("Snake Game", 800, 450);
 
         BEZ_INFO("Creating SnakeGame layer");
-        pushLayer(new SnakeGame());
-        pushOverlay(new bez::ImGuiLayer());
+        pushLayer(new SnakeGame);
+        pushOverlay(new bez::ImGuiLayer);
     }
 
     ~Sandbox() = default;
@@ -34,7 +34,7 @@ void SnakeGame::onAttach()
 
     m_shaders.addResource("default", std::move(myShader));
 
-    m_player = new Player(m_shaders.getResource("default"));
+    m_player = std::make_unique<Player>(m_shaders.getResource("default"));
 
     m_orthoProj = glm::ortho(0.f, 160.f, 0.f, 90.f, 0.1f, 500.f);
     m_camera = glm::mat4(1.f);
@@ -71,38 +71,32 @@ void SnakeGame::onEvent(bez::Event &event)
 {
     bez::EventDispatcher eventDispatcher(event);
 
-    eventDispatcher.dispatch<bez::KeyPressedEvent>(std::bind([](auto obj, bez::KeyPressedEvent &event) {
-        return obj->handleInput(event.getKeyCode());
-    }, this, std::placeholders::_1));
+    eventDispatcher.dispatch<bez::KeyPressedEvent>(std::bind(&SnakeGame::handleInput, this, std::placeholders::_1));
 
-    eventDispatcher.dispatch<bez::MouseMotionEvent>([](bez::MouseMotionEvent &event) {
-        return true;
-    });
-
-    eventDispatcher.dispatch<bez::KeyReleasedEvent>(std::bind([](auto obj, bez::KeyReleasedEvent &event) {
-        return obj->handleInput(event.getKeyCode());
-    }, this, std::placeholders::_1));
+    eventDispatcher.dispatch<bez::KeyReleasedEvent>(std::bind(&SnakeGame::handleInput, this, std::placeholders::_1));
 }
 
-bool SnakeGame::handleInput(Keycode keycode)
+bool SnakeGame::handleInput(bez::KeyEvent &p_event)
 {
+    Keycode keycode = p_event.getKeyCode();
+
     if (bez::Input::isKeyPressed(BEZ_KEYCODE_DOWN) || bez::Input::isKeyPressed(BEZ_KEYCODE_S))
         m_player->setDirection(DOWN);
     else if (bez::Input::isKeyPressed(BEZ_KEYCODE_UP) || bez::Input::isKeyPressed(BEZ_KEYCODE_W))
         m_player->setDirection(UP);
-    else if (keycode == BEZ_KEYCODE_RIGHT || keycode == BEZ_KEYCODE_D)
+    else if (bez::Input::isKeyPressed(BEZ_KEYCODE_RIGHT) || bez::Input::isKeyPressed(BEZ_KEYCODE_D))
         m_player->setDirection(RIGHT);
-    else if (keycode == BEZ_KEYCODE_LEFT || keycode == BEZ_KEYCODE_A)
+    else if (bez::Input::isKeyPressed(BEZ_KEYCODE_LEFT) || bez::Input::isKeyPressed(BEZ_KEYCODE_A))
         m_player->setDirection(LEFT);
 
-    if (keycode == BEZ_KEYCODE_Q || keycode == BEZ_KEYCODE_ESCAPE)
-        m_active = false;
+    if (bez::Input::isKeyPressed(BEZ_KEYCODE_Q))
+        bez::Application::getApplication().stop();
 
     if (bez::Input::isKeyPressed(BEZ_KEYCODE_J) && !bez::Input::isKeyRepeated(keycode))
         m_player->crouch();
 
     if (bez::Input::isKeyRepeated(keycode))
-        BEZ_INFO("Key repeated: ", keycode);
+        BEZ_INFO("Key repeated:", keycode);
 
     return true;
 }

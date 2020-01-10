@@ -17,11 +17,11 @@ public:
   void onUpdate() override;
   void onEvent(bez::Event &event) override;
 
-  bool handleInput(Keycode key);
+  bool handleInput(bez::KeyEvent &);
 
 protected:
 private:
-  Player *m_player;
+  std::unique_ptr<Player> m_player;
   ResourceAllocator<Shader> m_shaders;
   glm::mat4 m_orthoProj;
   glm::mat4 m_camera;
