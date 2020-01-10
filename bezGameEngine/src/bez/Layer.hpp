@@ -19,7 +19,12 @@ public:
   /// Handle events passed down from the application layer
   virtual void onEvent(Event &event);
 
+  /**
+   * Queried by the garbage cleaner, innactive layers
+   * are removed
+   */
   inline bool isActive() { return m_active; };
+
   inline bool isVisible() { return m_visible; };
 
   const std::string &getName();
