@@ -38,9 +38,9 @@ void SdlWindow::init(const char *p_title, unsigned int p_width,
     return;
   }
 
-  m_window = SDL_CreateWindow(p_title, SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, p_width, p_heigth,
-                              SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL);
+  m_window =
+      SDL_CreateWindow(p_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                       p_width, p_heigth, SDL_WINDOW_OPENGL);
 
   if (m_window == nullptr) {
     BEZ_CORE_CRIT("Failed to create window -", SDL_GetError());
@@ -89,8 +89,36 @@ void SdlWindow::onUpdate() {
       break;
     }
 
+    case SDL_TEXTINPUT: {
+      TextInputEvent event(static_cast<Keycode>(e.key.keysym.scancode));
+      m_eventCallback(event);
+      break;
+    }
+
     case SDL_MOUSEMOTION: {
       MouseMotionEvent event(e.motion.x, e.motion.y);
+      m_eventCallback(event);
+      break;
+    }
+
+    case SDL_MOUSEBUTTONDOWN: {
+      if (e.button.button <= 3) {
+        MouseButtonPressedEvent event(static_cast<MouseButton>(e.button.button));
+        m_eventCallback(event);
+      }
+      break;
+    }
+
+    case SDL_MOUSEBUTTONUP: {
+      if (e.button.button <= 3) {
+        MouseButtonReleasedEvent event(static_cast<MouseButton>(e.button.button));
+        m_eventCallback(event);
+      }
+      break;
+    }
+
+    case SDL_MOUSEWHEEL: {
+      MouseWheelEvent event(std::make_pair(e.wheel.x, e.wheel.y));
       m_eventCallback(event);
       break;
     }
