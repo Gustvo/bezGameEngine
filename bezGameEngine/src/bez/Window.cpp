@@ -1,3 +1,5 @@
+#include <stdafx.hpp>
+
 #include "Window.hpp"
 
 namespace bez {

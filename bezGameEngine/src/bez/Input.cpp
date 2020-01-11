@@ -1,5 +1,6 @@
-#include <bez/Input.hpp>
+#include <stdafx.hpp>
 
+#include <bez/Input.hpp>
 #include <bez/Logger/Log.hpp>
 
 namespace bez {
