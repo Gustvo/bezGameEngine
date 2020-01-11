@@ -48,8 +48,7 @@ public:
 protected:
 private:
   std::vector<Layer *> m_layers;
-  std::vector<Layer *>::iterator
-      m_layerPosition; // Iterator pointing to the last layer in the layerstack
+  unsigned int m_layerCount; // Iterator pointing to the last layer in the layerstack
                        // - separates layers from overlays
 };
 
