@@ -63,7 +63,7 @@ void ImGuiLayer::onDetach() {}
 void ImGuiLayer::onUpdate() {
   ImGuiIO &io = ImGui::GetIO();
 
-  double time = SDL_GetTicks() / 1000;
+  double time = SDL_GetTicks() / 1000.f; // To get time as seconds
 
   io.DeltaTime = m_time > 0.0f
                      ? (time - m_time == 0 ? (1.f / 60.f) : time - m_time)
@@ -80,8 +80,9 @@ void ImGuiLayer::onUpdate() {
 
   ImGui_ImplOpenGL3_NewFrame();
   ImGui::NewFrame();
-    if (m_visible)
-      ImGui::ShowDemoWindow(&m_visible);
+  if (m_visible)
+    if (ImGui::Button("Quit"))
+      Application::getApplication().stop();
 
   ImGui::Render();
   ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -160,7 +161,7 @@ bool ImGuiLayer::handleKeyInput(KeyEvent &p_event) {
 
   io.KeySuper = Input::isKeyPressed(BEZ_KEYCODE_LSUPER);
 
-  return io.WantCaptureKeyboard;;
+  return io.WantCaptureKeyboard;
 }
 
 bool ImGuiLayer::handleMouseInput(MouseButtonEvent &p_event) {
